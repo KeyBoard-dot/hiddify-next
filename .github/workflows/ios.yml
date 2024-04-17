@@ -1,0 +1,39 @@
+name: Ios Release
+
+on:
+    workflow_dispatch:
+    push:
+      branches:
+        - "main"
+      paths-ignore:
+        - "**.md"
+        - "**.txt"
+        - ".github/**"
+        - ".idea/**"
+        - "!.github/workflows/**"
+
+jobs:
+    main:
+      runs-on: macos-latest
+      steps:
+        - name: Clone repository
+          uses: actions/checkout@v4
+        - name: Set up Flutter
+          uses: subosito/flutter-action@v2
+          with:
+            channel: stable
+        - run: flutter pub get
+        - run: flutter build ios --release --no-codesign
+
+        - name: Create Payload directory and move Runner.app
+          run: |
+            mkdir -p build/ios/iphoneos/Payload
+            mv build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload
+        - name: Change directory and zip Payload to create hiddify.ipa
+          run: |
+            cd build/ios/iphoneos/
+            zip -r hiddify.ipa Payload
+        - uses: actions/upload-artifact@v3
+          with:
+            name: weather.ipa
+            path: build/ios/iphoneos/hiddify.ipa
